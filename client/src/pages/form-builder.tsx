@@ -26,6 +26,7 @@ import {
   Trash2,
   GripVertical
 } from "lucide-react";
+import { ShareFormDialog } from "@/components/share-form-dialog";
 import { useState, useEffect } from "react";
 import { DndContext, closestCenter, DragOverlay } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy, useSortable } from "@dnd-kit/sortable";
@@ -64,6 +65,7 @@ export default function FormBuilder() {
             <Eye className="h-4 w-4 mr-2" />
             Preview
           </Button>
+          <ShareFormDialog formId={formId} formTitle={form.title} />
           <PublishButton form={form} />
         </div>
       </header>

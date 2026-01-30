@@ -9,10 +9,12 @@ import {
   Calendar, 
   Sparkles, 
   Loader2,
-  Trash2
+  Trash2,
+  Share2
 } from "lucide-react";
 import { LayoutShell } from "@/components/layout-shell";
 import { Button } from "@/components/ui/button";
+import { ShareFormDialog } from "@/components/share-form-dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { 
@@ -137,6 +139,17 @@ function FormCard({ form }: { form: any }) {
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onClick={() => setLocation(`/builder/${form.id}`)}>Edit</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setLocation(`/forms/${form.id}/submissions`)}>Submissions</DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <ShareFormDialog 
+                    formId={form.id} 
+                    formTitle={form.title} 
+                    trigger={
+                      <div className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 w-full">
+                        Share
+                      </div>
+                    }
+                  />
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => window.open(`/forms/${form.id}`, '_blank')}>View Public</DropdownMenuItem>
                 <DropdownMenuItem className="text-destructive focus:text-destructive">Delete</DropdownMenuItem>
               </DropdownMenuContent>
