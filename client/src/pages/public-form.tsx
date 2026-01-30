@@ -8,7 +8,8 @@ import { Label } from "@/components/ui/label";
 import { useState } from "react";
 import { useForm as useReactForm } from "react-hook-form";
 import { motion, AnimatePresence } from "framer-motion";
-import { CheckCircle2, ChevronRight, ChevronLeft, Loader2 } from "lucide-react";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { CheckCircle2, ChevronRight, ChevronLeft, Loader2, Mic } from "lucide-react";
 import { VoiceInput } from "@/components/voice-input";
 
 export default function PublicForm() {
@@ -34,8 +35,8 @@ export default function PublicForm() {
     if (isValid) {
       if (isLastStep) {
         // Handle final submission
-        handleSubmit(async (data) => {
-          await submit.mutateAsync({ formId, data });
+        handleSubmit(async (formData) => {
+          await submit.mutateAsync({ formId, data: formData });
           setSubmitted(true);
         })();
       } else {
@@ -110,10 +111,31 @@ export default function PublicForm() {
                             </div>
                           </div>
                         ) : field.type === 'textarea' ? (
-                          <textarea 
-                            {...register(`field_${field.id}`, { required: field.required })}
-                            className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                          />
+                          <div className="relative flex-1">
+                            <textarea 
+                              {...register(`field_${field.id}`, { required: field.required })}
+                              className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                              placeholder={field.placeholder || "Your answer..."}
+                            />
+                            <div className="absolute right-2 bottom-2">
+                               <VoiceInput onTranscript={(text) => {
+                                 const current = register(`field_${field.id}`).value || "";
+                                 setValue(`field_${field.id}`, current ? `${current} ${text}` : text);
+                               }} className="h-8 w-8" />
+                            </div>
+                          </div>
+                        ) : field.type === 'radio' ? (
+                          <RadioGroup 
+                            onValueChange={(value) => setValue(`field_${field.id}`, value, { shouldValidate: true })}
+                            className="flex flex-col space-y-2"
+                          >
+                            {(field.options || []).map((option: any) => (
+                              <div key={option.value} className="flex items-center space-x-2">
+                                <RadioGroupItem value={option.value} id={`field_${field.id}_${option.value}`} />
+                                <Label htmlFor={`field_${field.id}_${option.value}`}>{option.label}</Label>
+                              </div>
+                            ))}
+                          </RadioGroup>
                         ) : (
                           <Input {...register(`field_${field.id}`)} />
                         )}

@@ -24,7 +24,10 @@ import {
   Calendar as CalendarIcon, 
   Plus,
   Trash2,
-  GripVertical
+  GripVertical,
+  CircleDot,
+  FileText,
+  Mic
 } from "lucide-react";
 import { ShareFormDialog } from "@/components/share-form-dialog";
 import { useState, useEffect } from "react";
@@ -126,10 +129,12 @@ export default function FormBuilder() {
             </div>
 
             {/* Add Field Palette (Simplified) */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
               <AddFieldButton type="text" icon={<Type className="w-4 h-4" />} label="Text Input" formId={formId} stepId={currentStep?.id} />
+              <AddFieldButton type="textarea" icon={<FileText className="w-4 h-4" />} label="Textarea" formId={formId} stepId={currentStep?.id} />
               <AddFieldButton type="number" icon={<Hash className="w-4 h-4" />} label="Number" formId={formId} stepId={currentStep?.id} />
               <AddFieldButton type="select" icon={<List className="w-4 h-4" />} label="Select" formId={formId} stepId={currentStep?.id} />
+              <AddFieldButton type="radio" icon={<CircleDot className="w-4 h-4" />} label="Radio" formId={formId} stepId={currentStep?.id} />
               <AddFieldButton type="checkbox" icon={<CheckSquare className="w-4 h-4" />} label="Checkbox" formId={formId} stepId={currentStep?.id} />
             </div>
           </div>
@@ -241,17 +246,29 @@ function FieldEditor({ field, formId }: { field: any, formId: number }) {
             />
           </div>
           
-          {/* Preview of the field */}
+            {/* Preview of the field */}
           <div className="pointer-events-none opacity-60">
             {field.type === 'text' && <Input placeholder="Short text answer" />}
+            {field.type === 'textarea' && <Textarea placeholder="Long text answer" />}
             {field.type === 'number' && <Input type="number" placeholder="0" />}
+            {field.type === 'radio' && (
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <div className="h-4 w-4 border border-primary rounded-full" />
+                  <label>Option 1</label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="h-4 w-4 border border-primary rounded-full" />
+                  <label>Option 2</label>
+                </div>
+              </div>
+            )}
             {field.type === 'checkbox' && (
               <div className="flex items-center space-x-2">
                 <div className="h-4 w-4 border border-primary rounded" />
                 <label>Option label</label>
               </div>
             )}
-             {/* Add other types */}
           </div>
 
           <div className="mt-4 pt-4 border-t border-border/50 flex items-center gap-4 opacity-0 group-hover:opacity-100 transition-opacity">
