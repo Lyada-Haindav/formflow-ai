@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useForms, useCreateForm, useGenerateFormAI, useCreateCompleteForm } from "@/hooks/use-forms";
+import { useSubmissions } from "@/hooks/use-submissions";
 import { Link, useLocation } from "wouter";
 import { 
   Plus, 
@@ -10,7 +11,9 @@ import {
   Sparkles, 
   Loader2,
   Trash2,
-  Share2
+  Share2,
+  ArrowLeft,
+  Download
 } from "lucide-react";
 import { LayoutShell } from "@/components/layout-shell";
 import { Button } from "@/components/ui/button";
@@ -33,11 +36,19 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { format } from "date-fns";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 export default function Dashboard() {
   const { data: forms, isLoading } = useForms();
-  const [_, setLocation] = useLocation();
+  const [selectedFormId, setSelectedFormId] = useState<number | null>(null);
 
   if (isLoading) {
     return (
@@ -49,11 +60,37 @@ export default function Dashboard() {
     );
   }
 
+  if (selectedFormId) {
+    const form = forms?.find(f => f.id === selectedFormId);
+    return (
+      <LayoutShell>
+        <div className="space-y-6">
+          <Button 
+            variant="ghost" 
+            onClick={() => setSelectedFormId(null)}
+            className="gap-2"
+            data-testid="button-back-to-dashboard"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to Dashboard
+          </Button>
+          
+          {form && (
+            <div>
+              <h1 className="text-3xl font-bold font-display">{form.title} - Submissions</h1>
+              <p className="text-muted-foreground mt-1">View and download all responses for this form.</p>
+            </div>
+          )}
+
+          <SubmissionsView formId={selectedFormId} />
+        </div>
+      </LayoutShell>
+    );
+  }
+
   const activeForms = forms?.filter(f => f.isPublished).length || 0;
   const totalForms = forms?.length || 0;
-  // Mock total submissions calculation for now
-  const totalSubmissions = 124; 
-
+  
   return (
     <LayoutShell>
       <div className="space-y-8">
@@ -70,7 +107,7 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <StatCard title="Total Forms" value={totalForms} icon={<FileText className="text-blue-500" />} />
           <StatCard title="Active Forms" value={activeForms} icon={<Sparkles className="text-amber-500" />} />
-          <StatCard title="Total Responses" value={totalSubmissions} icon={<BarChart2 className="text-emerald-500" />} />
+          <StatCard title="Total Responses" value={0} icon={<BarChart2 className="text-emerald-500" />} />
         </div>
 
         {/* Forms List */}
@@ -79,7 +116,7 @@ export default function Dashboard() {
           {forms && forms.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {forms.map((form) => (
-                <FormCard key={form.id} form={form} />
+                <FormCard key={form.id} form={form} onViewSubmissions={() => setSelectedFormId(form.id)} />
               ))}
             </div>
           ) : (
@@ -95,6 +132,107 @@ export default function Dashboard() {
         </div>
       </div>
     </LayoutShell>
+  );
+}
+
+function SubmissionsView({ formId }: { formId: number }) {
+  const { data: submissions, isLoading } = useSubmissions(formId);
+
+  const downloadCSV = () => {
+    if (!submissions || submissions.length === 0) return;
+
+    // Get all unique keys from all submissions
+    const keys = Array.from(new Set(submissions.flatMap(s => Object.keys(s.data as object))));
+    
+    const headers = ["Submitted At", ...keys];
+    const rows = submissions.map(s => {
+      const data = s.data as Record<string, any>;
+      return [
+        format(new Date(s.submittedAt), 'yyyy-MM-dd HH:mm:ss'),
+        ...keys.map(k => {
+          const val = data[k];
+          return typeof val === 'object' ? JSON.stringify(val) : val;
+        })
+      ];
+    });
+
+    const csvContent = [
+      headers.join(","),
+      ...rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(","))
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `submissions_form_${formId}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!submissions || submissions.length === 0) {
+    return (
+      <Card className="bg-muted/30 border-dashed">
+        <CardContent className="py-20 text-center">
+          <BarChart2 className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+          <h3 className="text-lg font-medium">No submissions yet</h3>
+          <p className="text-muted-foreground">When people fill out your form, their responses will appear here.</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const dataKeys = Array.from(new Set(submissions.flatMap(s => Object.keys(s.data as object))));
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-end">
+        <Button onClick={downloadCSV} className="gap-2" data-testid="button-download-csv">
+          <Download className="w-4 h-4" />
+          Download CSV
+        </Button>
+      </div>
+
+      <Card>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Date</TableHead>
+              {dataKeys.map(key => (
+                <TableHead key={key} className="capitalize">{key}</TableHead>
+              ))}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {submissions.map((submission) => (
+              <TableRow key={submission.id}>
+                <TableCell className="whitespace-nowrap text-muted-foreground">
+                  {format(new Date(submission.submittedAt), 'MMM d, HH:mm')}
+                </TableCell>
+                {dataKeys.map(key => {
+                  const val = (submission.data as any)[key];
+                  return (
+                    <TableCell key={key}>
+                      {typeof val === 'boolean' ? (val ? 'Yes' : 'No') : String(val ?? '-')}
+                    </TableCell>
+                  );
+                })}
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </Card>
+    </div>
   );
 }
 
@@ -114,7 +252,7 @@ function StatCard({ title, value, icon }: { title: string, value: number, icon: 
   );
 }
 
-function FormCard({ form }: { form: any }) {
+function FormCard({ form, onViewSubmissions }: { form: any, onViewSubmissions: () => void }) {
   const [_, setLocation] = useLocation();
 
   return (
@@ -132,13 +270,13 @@ function FormCard({ form }: { form: any }) {
             </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                <Button variant="ghost" className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity" data-testid={`button-form-menu-${form.id}`}>
                   <MoreVertical className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onClick={() => setLocation(`/builder/${form.id}`)}>Edit</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setLocation(`/forms/${form.id}/submissions`)}>Submissions</DropdownMenuItem>
+                <DropdownMenuItem onClick={onViewSubmissions}>Submissions</DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <ShareFormDialog 
                     formId={form.id} 
@@ -166,14 +304,19 @@ function FormCard({ form }: { form: any }) {
               <Calendar className="w-3 h-3" />
               {format(new Date(form.createdAt), 'MMM d, yyyy')}
             </div>
-            <div className="flex items-center gap-1">
+            <button 
+              className="flex items-center gap-1 hover:text-primary transition-colors"
+              onClick={onViewSubmissions}
+              data-testid={`button-view-submissions-${form.id}`}
+            >
               <BarChart2 className="w-3 h-3" />
-              0 responses
-            </div>
+              View Submissions
+            </button>
           </div>
           <Button 
             className="w-full mt-4 bg-muted hover:bg-muted/80 text-foreground shadow-none" 
             onClick={() => setLocation(`/builder/${form.id}`)}
+            data-testid={`button-edit-form-${form.id}`}
           >
             Edit Form
           </Button>
@@ -216,7 +359,7 @@ function CreateFormDialog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size="lg" className="shadow-lg shadow-primary/20">
+        <Button size="lg" className="shadow-lg shadow-primary/20" data-testid="button-create-new-form">
           <Plus className="mr-2 h-5 w-5" />
           Create New Form
         </Button>
@@ -233,6 +376,7 @@ function CreateFormDialog() {
           <div 
             className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${activeTab === 'ai' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/30'}`}
             onClick={() => setActiveTab('ai')}
+            data-testid="tab-create-ai"
           >
             <div className="p-2 bg-purple-100 rounded-lg w-fit text-purple-600 mb-3">
               <Sparkles className="w-6 h-6" />
@@ -244,6 +388,7 @@ function CreateFormDialog() {
           <div 
             className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${activeTab === 'scratch' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/30'}`}
             onClick={() => setActiveTab('scratch')}
+            data-testid="tab-create-scratch"
           >
             <div className="p-2 bg-blue-100 rounded-lg w-fit text-blue-600 mb-3">
               <Plus className="w-6 h-6" />
@@ -262,6 +407,7 @@ function CreateFormDialog() {
                 className="h-32 resize-none"
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
+                data-testid="input-ai-prompt"
               />
             </div>
           </div>
@@ -273,13 +419,14 @@ function CreateFormDialog() {
                 placeholder="e.g. Contact Form" 
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
+                data-testid="input-form-title"
               />
             </div>
           </div>
         )}
 
         <div className="flex justify-end pt-4">
-          <Button onClick={handleCreate} disabled={isPending} className="w-full sm:w-auto">
+          <Button onClick={handleCreate} disabled={isPending} className="w-full sm:w-auto" data-testid="button-confirm-create">
             {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {activeTab === 'ai' ? 'Generate Form' : 'Create Form'}
           </Button>
