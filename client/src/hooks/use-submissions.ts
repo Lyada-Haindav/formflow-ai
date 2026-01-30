@@ -22,12 +22,12 @@ export function useSubmitForm() {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async ({ formId, data }: { formId: number } & SubmitFormRequest) => {
+    mutationFn: async ({ formId, data }: { formId: number, data: Record<string, any> }) => {
       const url = buildUrl(api.submissions.create.path, { formId });
       const res = await fetch(url, {
         method: api.submissions.create.method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify({ data }),
       });
       if (!res.ok) throw new Error("Failed to submit form");
       return api.submissions.create.responses[201].parse(await res.json());

@@ -37,15 +37,20 @@ export default function PublicForm() {
       if (isLastStep) {
         // Handle final submission
         handleSubmit(async (formData) => {
-          // Ensure we only send the fields
+          // Flatten form data into expected structure: { data: Record<string, any> }
           const submissionData: Record<string, any> = {};
           Object.keys(formData).forEach(key => {
             if (key.startsWith('field_')) {
               submissionData[key] = formData[key];
             }
           });
-          await submit.mutateAsync({ formId, data: submissionData });
-          setSubmitted(true);
+          
+          try {
+            await submit.mutateAsync({ formId, data: submissionData });
+            setSubmitted(true);
+          } catch (error) {
+            console.error("Submission failed:", error);
+          }
         })();
       } else {
         setCurrentStep(prev => prev + 1);
