@@ -5,8 +5,17 @@ import { api } from "@shared/routes";
 import { z } from "zod";
 import { setupAuth, registerAuthRoutes, isAuthenticated } from "./replit_integrations/auth";
 import { registerAudioRoutes, speechToText, ensureCompatibleFormat } from "./replit_integrations/audio";
-import { openai } from "./replit_integrations/image"; // Re-using openai client
+import { GoogleGenAI } from "@google/genai";
 import express from 'express';
+
+// Gemini AI client using Replit AI Integrations (no API key needed)
+const ai = new GoogleGenAI({
+  apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY,
+  httpOptions: {
+    apiVersion: "",
+    baseUrl: process.env.AI_INTEGRATIONS_GEMINI_BASE_URL,
+  },
+});
 import { db } from "./db";
 import { templates } from "@shared/schema";
 
@@ -135,17 +144,12 @@ export async function registerRoutes(
     res.json(submissions);
   });
 
-  // AI Generation
+  // AI Generation using Gemini
   app.post(api.ai.generateForm.path, isAuthenticated, async (req, res) => {
     const { prompt } = req.body;
 
     try {
-      const response = await openai.chat.completions.create({
-        model: "gpt-5.1",
-        messages: [
-          { 
-            role: "system", 
-            content: `You are an expert form builder. Generate a JSON structure for a multi-step form based on the user's prompt. 
+      const systemPrompt = `You are an expert form builder. Generate a JSON structure for a multi-step form based on the user's prompt. 
             Response format:
             {
               "title": "Form Title",
@@ -166,14 +170,20 @@ export async function registerRoutes(
                 }
               ]
             }
-            Return ONLY valid JSON.`
-          },
-          { role: "user", content: prompt }
+            Return ONLY valid JSON.`;
+
+      const response = await ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: [
+          { role: "user", parts: [{ text: `${systemPrompt}\n\nUser request: ${prompt}` }] }
         ],
-        response_format: { type: "json_object" }
+        config: {
+          responseMimeType: "application/json",
+        },
       });
 
-      const generated = JSON.parse(response.choices[0].message.content || "{}");
+      const text = response.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
+      const generated = JSON.parse(text);
       res.json(generated);
     } catch (error) {
       console.error("AI Generation Error:", error);
