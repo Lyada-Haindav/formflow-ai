@@ -1,6 +1,10 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { api, buildUrl, type SubmitFormRequest } from "@shared/routes";
+import { api, buildUrl } from "@shared/routes";
 import { useToast } from "@/hooks/use-toast";
+
+type SubmitFormRequest = {
+  data: Record<string, any>;
+};
 
 export function useSubmissions(formId: number) {
   return useQuery({

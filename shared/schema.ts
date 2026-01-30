@@ -88,7 +88,6 @@ export const submissionsRelations = relations(submissions, ({ one }) => ({
 
 export const insertFormSchema = createInsertSchema(forms).omit({ 
   id: true, 
-  userId: true, 
   createdAt: true, 
   updatedAt: true 
 });

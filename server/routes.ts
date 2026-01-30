@@ -47,7 +47,12 @@ export async function registerRoutes(
   app.post(api.forms.create.path, isAuthenticated, async (req: any, res) => {
     try {
       const input = api.forms.create.input.parse(req.body);
-      const form = await storage.createForm({ ...input, userId: req.user.claims.sub });
+      const form = await storage.createForm({ 
+        title: input.title,
+        description: input.description,
+        isPublished: input.isPublished ?? false,
+        userId: req.user.claims.sub 
+      });
       res.status(201).json(form);
     } catch (err) {
       if (err instanceof z.ZodError) res.status(400).json(err.errors);

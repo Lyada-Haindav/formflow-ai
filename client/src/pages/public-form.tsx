@@ -11,6 +11,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { CheckCircle2, ChevronRight, ChevronLeft, Loader2, Mic } from "lucide-react";
 import { VoiceInput } from "@/components/voice-input";
+import { Textarea } from "@/components/ui/textarea";
 
 export default function PublicForm() {
   const { id } = useParams();
@@ -21,7 +22,7 @@ export default function PublicForm() {
   const [currentStep, setCurrentStep] = useState(0);
   const [submitted, setSubmitted] = useState(false);
 
-  const { register, handleSubmit, setValue, formState: { errors }, trigger } = useReactForm();
+  const { register, handleSubmit, setValue, formState: { errors }, trigger, getValues } = useReactForm();
 
   if (isLoading) return <div className="h-screen flex items-center justify-center"><Loader2 className="animate-spin" /></div>;
   if (!form) return <div className="h-screen flex items-center justify-center text-muted-foreground">Form not found or unpublished.</div>;
@@ -36,7 +37,14 @@ export default function PublicForm() {
       if (isLastStep) {
         // Handle final submission
         handleSubmit(async (formData) => {
-          await submit.mutateAsync({ formId, data: formData });
+          // Ensure we only send the fields
+          const submissionData: Record<string, any> = {};
+          Object.keys(formData).forEach(key => {
+            if (key.startsWith('field_')) {
+              submissionData[key] = formData[key];
+            }
+          });
+          await submit.mutateAsync({ formId, data: submissionData });
           setSubmitted(true);
         })();
       } else {
@@ -98,29 +106,37 @@ export default function PublicForm() {
                       </Label>
                       
                       <div className="flex gap-2">
-                        {field.type === 'text' || field.type === 'email' ? (
+                        {field.type === 'text' || field.type === 'email' || field.type === 'number' ? (
                           <div className="relative flex-1">
                             <Input 
                               {...register(`field_${field.id}`, { required: field.required })}
+                              type={field.type === 'number' ? 'number' : 'text'}
                               placeholder={field.placeholder || "Your answer..."}
                               className="bg-gray-50/50"
                             />
                             {/* Voice Input Integration */}
                             <div className="absolute right-2 top-1/2 -translate-y-1/2">
-                               <VoiceInput onTranscript={(text) => setValue(`field_${field.id}`, text)} className="h-8 w-8" />
+                               <VoiceInput 
+                                 onTranscript={(text) => {
+                                   const fieldName = `field_${field.id}`;
+                                   setValue(fieldName, text, { shouldValidate: true });
+                                 }} 
+                                 className="h-8 w-8" 
+                               />
                             </div>
                           </div>
                         ) : field.type === 'textarea' ? (
                           <div className="relative flex-1">
-                            <textarea 
+                            <Textarea 
                               {...register(`field_${field.id}`, { required: field.required })}
-                              className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                              className="bg-gray-50/50 min-h-[120px]"
                               placeholder={field.placeholder || "Your answer..."}
                             />
                             <div className="absolute right-2 bottom-2">
                                <VoiceInput onTranscript={(text) => {
-                                 const current = register(`field_${field.id}`).value || "";
-                                 setValue(`field_${field.id}`, current ? `${current} ${text}` : text);
+                                 const fieldName = `field_${field.id}`;
+                                 const current = getValues(fieldName) || "";
+                                 setValue(fieldName, current ? `${current} ${text}` : text, { shouldValidate: true });
                                }} className="h-8 w-8" />
                             </div>
                           </div>
@@ -135,9 +151,21 @@ export default function PublicForm() {
                                 <Label htmlFor={`field_${field.id}_${option.value}`}>{option.label}</Label>
                               </div>
                             ))}
+                            {/* Hidden input for react-hook-form registration */}
+                            <input type="hidden" {...register(`field_${field.id}`, { required: field.required })} />
                           </RadioGroup>
+                        ) : field.type === 'checkbox' ? (
+                           <div className="flex items-center space-x-2">
+                             <input 
+                               type="checkbox" 
+                               id={`field_${field.id}`}
+                               {...register(`field_${field.id}`, { required: field.required })}
+                               className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                             />
+                             <Label htmlFor={`field_${field.id}`}>{field.placeholder || 'Check this box'}</Label>
+                           </div>
                         ) : (
-                          <Input {...register(`field_${field.id}`)} />
+                          <Input {...register(`field_${field.id}`, { required: field.required })} />
                         )}
                       </div>
                       
