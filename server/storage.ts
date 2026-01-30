@@ -7,6 +7,7 @@ export interface IStorage {
   getForms(userId: string): Promise<Form[]>;
   getForm(id: number): Promise<(Form & { steps: (Step & { fields: Field[] })[] }) | undefined>;
   createForm(form: InsertForm): Promise<Form>;
+  createFormWithSteps(form: InsertForm, stepsData: { title: string; description?: string; fields: Omit<InsertField, 'stepId' | 'orderIndex'>[] }[]): Promise<Form & { steps: (Step & { fields: Field[] })[] }>;
   updateForm(id: number, form: Partial<InsertForm>): Promise<Form>;
   deleteForm(id: number): Promise<void>;
   
@@ -52,6 +53,41 @@ export class DatabaseStorage implements IStorage {
   async createForm(form: InsertForm): Promise<Form> {
     const [newForm] = await db.insert(forms).values(form).returning();
     return newForm;
+  }
+
+  async createFormWithSteps(form: InsertForm, stepsData: { title: string; description?: string; fields: Omit<InsertField, 'stepId' | 'orderIndex'>[] }[]): Promise<Form & { steps: (Step & { fields: Field[] })[] }> {
+    const [newForm] = await db.insert(forms).values(form).returning();
+    
+    const stepsWithFields: (Step & { fields: Field[] })[] = [];
+    
+    for (let stepIndex = 0; stepIndex < stepsData.length; stepIndex++) {
+      const stepData = stepsData[stepIndex];
+      const [newStep] = await db.insert(formSteps).values({
+        formId: newForm.id,
+        title: stepData.title,
+        description: stepData.description || null,
+        orderIndex: stepIndex,
+      }).returning();
+      
+      const fields: Field[] = [];
+      for (let fieldIndex = 0; fieldIndex < stepData.fields.length; fieldIndex++) {
+        const fieldData = stepData.fields[fieldIndex];
+        const [newField] = await db.insert(formFields).values({
+          stepId: newStep.id,
+          type: fieldData.type,
+          label: fieldData.label,
+          placeholder: fieldData.placeholder || null,
+          required: fieldData.required ?? false,
+          options: fieldData.options || null,
+          orderIndex: fieldIndex,
+        }).returning();
+        fields.push(newField);
+      }
+      
+      stepsWithFields.push({ ...newStep, fields });
+    }
+    
+    return { ...newForm, steps: stepsWithFields };
   }
 
   async updateForm(id: number, form: Partial<InsertForm>): Promise<Form> {

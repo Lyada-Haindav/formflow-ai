@@ -191,6 +191,42 @@ export async function registerRoutes(
     }
   });
 
+  // Create complete form from AI generation or template
+  app.post("/api/forms/create-complete", isAuthenticated, async (req: any, res) => {
+    try {
+      const { title, description, steps } = req.body;
+      
+      if (!title || !steps || !Array.isArray(steps)) {
+        return res.status(400).json({ message: "Title and steps are required" });
+      }
+
+      const form = await storage.createFormWithSteps(
+        { 
+          title, 
+          description: description || "", 
+          userId: req.user.claims.sub,
+          isPublished: false 
+        },
+        steps.map((step: any) => ({
+          title: step.title || "Untitled Step",
+          description: step.description,
+          fields: (step.fields || []).map((field: any) => ({
+            type: field.type || "text",
+            label: field.label || "Field",
+            placeholder: field.placeholder,
+            required: field.required ?? false,
+            options: field.options || null,
+          }))
+        }))
+      );
+
+      res.status(201).json(form);
+    } catch (error) {
+      console.error("Create complete form error:", error);
+      res.status(500).json({ message: "Failed to create form" });
+    }
+  });
+
   // Transcribe Endpoint (Simple helper for frontend voice input)
   app.post("/api/transcribe", express.json({ limit: "50mb" }), async (req, res) => {
     try {

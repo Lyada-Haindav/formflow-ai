@@ -138,3 +138,31 @@ export function useGenerateFormAI() {
     }
   });
 }
+
+export function useCreateCompleteForm() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (data: { title: string; description?: string; steps: any[] }) => {
+      const res = await fetch("/api/forms/create-complete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+        credentials: "include",
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "Failed to create form");
+      }
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [api.forms.list.path] });
+      toast({ title: "Form created!", description: "Your form with all steps is ready." });
+    },
+    onError: (error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+}

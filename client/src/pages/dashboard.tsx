@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useForms, useCreateForm, useGenerateFormAI } from "@/hooks/use-forms";
+import { useForms, useCreateForm, useGenerateFormAI, useCreateCompleteForm } from "@/hooks/use-forms";
 import { Link, useLocation } from "wouter";
 import { 
   Plus, 
@@ -179,6 +179,7 @@ function CreateFormDialog() {
 
   const createMutation = useCreateForm();
   const generateMutation = useGenerateFormAI();
+  const createCompleteMutation = useCreateCompleteForm();
 
   const handleCreate = async () => {
     if (activeTab === 'scratch') {
@@ -186,22 +187,18 @@ function CreateFormDialog() {
       setOpen(false);
       setLocation(`/builder/${res.id}`);
     } else {
-      // AI Generation flow
       const generated = await generateMutation.mutateAsync(prompt);
-      // First create the form shell
-      const form = await createMutation.mutateAsync({ 
-        title: generated.title, 
-        description: generated.description 
+      const form = await createCompleteMutation.mutateAsync({
+        title: generated.title,
+        description: generated.description,
+        steps: generated.steps || []
       });
-      // In a real app, we would also batch create steps and fields here. 
-      // For MVP simplicity, we redirect to builder and let user populate or handle complex hydration logic separately.
-      // But let's assume the mutation handles it or we'd chain calls here.
-      // For this generated output, let's just redirect.
+      setOpen(false);
       setLocation(`/builder/${form.id}`);
     }
   };
 
-  const isPending = createMutation.isPending || generateMutation.isPending;
+  const isPending = createMutation.isPending || generateMutation.isPending || createCompleteMutation.isPending;
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
