@@ -16,6 +16,15 @@ spring:
         format_sql: true
     open-in-view: false
 
+# Supabase Configuration
+supabase:
+  url: ${SUPABASE_URL:https://srnzhlxmmljizohqlfce.supabase.co}
+  anon-key: ${SUPABASE_ANON_KEY:eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNybnpobHhtbWxqaXpvaHFsZmNlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAzMDA5NzYsImV4cCI6MjA4NTg3Njk3Nn0.KjCHJ9mTdvN5fq5fKgSF4b12IQ-Ajlgc3usXCAgeAQI}
+
+# Gemini AI Configuration
+gemini:
+  api-key: ${GOOGLE_API_KEY:}
+
 logging:
   level:
     org.hibernate.SQL: info
