@@ -3,14 +3,16 @@ server:
 
 spring:
   datasource:
-    url: jdbc:mysql://localhost:3306/form_weaver?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
-    username: hibernate
-    password: haindav@1
+    url: ${POSTGRES_URL:jdbc:postgresql://localhost:5432/form_weaver}
+    username: ${POSTGRES_USERNAME:postgres}
+    password: ${POSTGRES_PASSWORD:}
+    driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
       ddl-auto: update
     properties:
       hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
     open-in-view: false
 
