@@ -5,28 +5,23 @@ spring:
   profiles:
     active: railway
   datasource:
-    url: jdbc:postgresql://aws-0-us-east-1.pooler.supabase.com:6543/postgres
-    username: ${SUPABASE_USER:postgres}
-    password: ${SUPABASE_PASSWORD:}
-    driver-class-name: org.postgresql.Driver
+    url: jdbc:h2:mem:testdb
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: 
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: create-drop
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
+        dialect: org.hibernate.dialect.H2Dialect
         format_sql: true
     open-in-view: false
-
-# Supabase Configuration
-supabase:
-  url: ${SUPABASE_URL:https://srnzhlxmmljizohqlfce.supabase.co}
-  anon-key: ${SUPABASE_ANON_KEY:eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNybnpobHhtbWxqaXpvaHFsZmNlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAzMDA5NzYsImV4cCI6MjA4NTg3Njk3Nn0.KjCHJ9mTdvN5fq5fKgSF4b12IQ-Ajlgc3usXCAgeAQI}
-
-# Gemini AI Configuration
-gemini:
-  api-key: ${GOOGLE_API_KEY:}
+  h2:
+    console:
+      enabled: true
 
 logging:
   level:
-    org.hibernate.SQL: info
+    org.springframework: INFO
+    com.formweaverai: DEBUG
