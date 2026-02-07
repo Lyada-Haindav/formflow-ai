@@ -1,5 +1,6 @@
 com/formweaverai/entity/AppUser.class
 com/formweaverai/entity/Form.class
+com/formweaverai/controller/HealthController.class
 com/formweaverai/entity/Submission.class
 com/formweaverai/util/JsonNodeConverter.class
 com/formweaverai/entity/User.class

@@ -2,29 +2,12 @@ server:
   port: 8080
 
 spring:
-  datasource:
-    url: jdbc:mysql://localhost:3306/formflow
-    username: formflow_user
-    password: ${MYSQL_ROOT_PASSWORD}
-    driver-class-name: com.mysql.cj.jdbc.Driver
-  jpa:
-    hibernate:
-      ddl-auto: update
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.MySQL8Dialect
-        format_sql: true
-    open-in-view: false
-
-# Supabase Configuration
-supabase:
-  url: ${SUPABASE_URL:https://srnzhlxmmljizohqlfce.supabase.co}
-  anon-key: ${SUPABASE_ANON_KEY:eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNybnpobHhtbWxqaXpvaHFsZmNlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAzMDA5NzYsImV4cCI6MjA4NTg3Njk3Nn0.KjCHJ9mTdvN5fq5fKgSF4b12IQ-Ajlgc3usXCAgeAQI}
-
-# Gemini AI Configuration
-gemini:
-  api-key: ${GOOGLE_API_KEY:}
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+      - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
 
 logging:
   level:
-    org.hibernate.SQL: info
+    org.springframework: INFO
+    com.formweaverai: DEBUG
