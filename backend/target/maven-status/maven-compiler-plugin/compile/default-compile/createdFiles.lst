@@ -1,0 +1,9 @@
+com/formweaverai/entity/AppUser.class
+com/formweaverai/entity/Form.class
+com/formweaverai/entity/Submission.class
+com/formweaverai/util/JsonNodeConverter.class
+com/formweaverai/entity/User.class
+com/formweaverai/entity/FormStep.class
+com/formweaverai/entity/FormField.class
+com/formweaverai/entity/Template.class
+com/formweaverai/FormWeaverApplication.class

@@ -2,6 +2,7 @@ package com.formweaverai.entity;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import com.fasterxml.jackson.databind.JsonNode;
 
 @Entity
 @Table(name = "templates")
@@ -18,6 +19,9 @@ public class Template {
     private String category;
 
     private String icon;
+
+    @Column(columnDefinition = "TEXT")
+    private JsonNode config;
 
     private Boolean aiGenerated = false;
 
@@ -44,6 +48,9 @@ public class Template {
 
     public String getIcon() { return icon; }
     public void setIcon(String icon) { this.icon = icon; }
+
+    public JsonNode getConfig() { return config; }
+    public void setConfig(JsonNode config) { this.config = config; }
 
     public Boolean getAiGenerated() { return aiGenerated; }
     public void setAiGenerated(Boolean aiGenerated) { this.aiGenerated = aiGenerated; }
